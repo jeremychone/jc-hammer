@@ -39,7 +39,7 @@ function show_zed_picker()
 	local choices = {}
 	for _, ws in ipairs(matched) do
 		table.insert(choices, {
-			text = "Open: " .. (ws.name or ws.display_name or ws.path),
+			text = (ws.name or ws.display_name or ws.path),
 			subText = ws.path,
 			image = image_open,
 			data = ws,
@@ -47,7 +47,7 @@ function show_zed_picker()
 	end
 	for _, ws in ipairs(remaining) do
 		table.insert(choices, {
-			text = "Recent: " .. (ws.name or ws.display_name or ws.path),
+			text = (ws.name or ws.display_name or ws.path),
 			subText = ws.path,
 			image = image_closed,
 			data = ws,
@@ -69,7 +69,14 @@ function show_zed_picker()
 	end)
 	chooser:choices(choices)
 	chooser:width(25)
-	chooser:show()
+	-- Position the chooser relative to the currently focused window (x+100, y+100)
+	local topLeft = nil
+	local win = hs.window.focusedWindow()
+	if win then
+		topLeft = win:topLeft()
+		topLeft = hs.geometry.point(topLeft.x + 100, topLeft.y + 100)
+	end
+	chooser:show(topLeft)
 end
 
 return {
