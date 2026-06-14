@@ -70,13 +70,18 @@ function show_zed_picker()
 	chooser:choices(choices)
 	chooser:width(25)
 	-- Position the chooser relative to the currently focused window (x+100, y+100)
-	local topLeft = nil
+
 	local win = hs.window.focusedWindow()
-	if win then
+	-- If the focused window is Finder, let the chooser use its default position.
+	if win and win:application():name() ~= "Finder" then
+		local topLeft = nil
 		topLeft = win:topLeft()
 		topLeft = hs.geometry.point(topLeft.x + 100, topLeft.y + 100)
+		chooser:show(topLeft)
+		-- otherwise show default position (centered)
+	else
+		chooser:show()
 	end
-	chooser:show(topLeft)
 end
 
 return {
