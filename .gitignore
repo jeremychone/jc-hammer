@@ -4,9 +4,8 @@
 !.gitignore
 
 # Ignore all file/paths starting with _, except in src/
-_*
-!**/src/**/_*/
-!**/src/**/_*
+*.png
+!jc.spoon/images/*.png
 
 # -- For lua
 !.luarc.json
@@ -83,7 +82,6 @@ cdk.out/
 *.ico
 *.jpeg
 *.jpg
-*.png
 *.bmp
 *.eps
 *.ai
