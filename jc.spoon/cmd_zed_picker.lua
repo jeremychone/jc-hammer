@@ -57,14 +57,30 @@ function show_zed_picker()
 	-- === Create and show chooser
 	local chooser = hs.chooser.new(function(choice)
 		if not choice then return end
+
+		-- determine is_do_close (if the Alt/Option key is down)
+		local mods = hs.eventtap.checkKeyboardModifiers() or {}
+		local is_do_close = mods.alt;
+
 		local ws = choice.data
+		local win = nil
 		if ws.is_open and ws.window_id then
-			local win = hs.window.get(ws.window_id)
+			-- if open, then, we set focus
+			win = hs.window.get(ws.window_id)
+		end
+
+		if is_do_close then
+			-- IF: if is_do_close, then we close the open window
 			if win then
-				win:focus()
+				win:close()
 			end
 		else
-			hs.execute("open -a Zed '" .. ws.path .. "'")
+			-- ELSE: otherwise, we are in open mode
+			if not ws.is_open then
+				hs.execute("open -a Zed '" .. ws.path .. "'")
+			elseif win then
+				win:focus()
+			end
 		end
 	end)
 	chooser:choices(choices)
