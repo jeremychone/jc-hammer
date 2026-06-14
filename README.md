@@ -14,11 +14,16 @@ Smart Zed picker chooser that creates new windows only if not already open.
 - Blue opened folders are already-open Zed windows projects. Selecting them brings the Zed window into focus.
 - White closed folders are recent Zed projects that are not currently open. Selecting one creates a new Zed window for that project.
 
+Modifiers: 
+
+- `shift` click will keep the chooser open after performing the action and refresh the list
+- `option` click will close the project (it will do nothing if the project is not open)
+
 > Note 1: I made this to solve a Zed regression [#54657](https://github.com/zed-industries/zed/issues/54657) that caused Open Recent Project to reopen a new window instead of reusing an already opened window. This issue has a nice [PR #56479](https://github.com/zed-industries/zed/pull/56479) but it is unclear if/when it will be merged
 
 > Note 2: For recent projects, this script reads the Zed recent projects database (`/Library/Application Support/Zed/db/...`).
 
-**IMPORTANT** Make it your own, this `jc.spoon` will evolve with some personal productivity scripts and might change behavior. So, make your own spoon, so that you can test/cherry pick what you need from this one. 
+**IMPORTANT** Make it your own. This `jc.spoon` will evolve with some personal productivity scripts and might change behavior. So, make your own spoon so that you can test/cherry-pick what you need from this one.
 
 ## Install
 
