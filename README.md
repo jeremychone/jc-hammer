@@ -60,3 +60,7 @@ Restart Hammerspoon or press Reload in the Console
 
 `Cmd + Ctrl + Shift + O` triggers the picker (see screenshot above).
 
+
+---
+
+[This repo](https://github.com/jeremychone/jc-hammer)
