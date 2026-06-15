@@ -33,7 +33,19 @@ local function normalize_match_key(path)
 	return basename
 end
 
+-- Load user config if present, otherwise default config.
+local function load_config(spoonPath)
+	local user_path = spoonPath .. "/config_user.lua"
+	local default_path = spoonPath .. "/config_default.lua"
+	local ok, result = pcall(dofile, user_path)
+	if ok and result then
+		return result
+	end
+	return dofile(default_path)
+end
+
 return {
 	parse_timestamp = parse_timestamp,
 	normalize_match_key = normalize_match_key,
+	load_config = load_config,
 }

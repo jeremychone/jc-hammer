@@ -3,6 +3,9 @@
 .*
 !.gitignore
 
+# Allow user customization
+jc.spoon/config_user.lua
+
 # Ignore all file/paths starting with _, except in src/
 *.png
 !jc.spoon/images/*.png

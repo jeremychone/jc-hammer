@@ -37,7 +37,7 @@ local function re_focus(win)
 	end)
 end
 
-function show_zed_picker()
+function show_zed_picker(config)
 	-- === Load assets
 	local image_open = hs.image.imageFromPath(spoonPath .. "/images/ico-opened.png")
 	local image_closed = hs.image.imageFromPath(spoonPath .. "/images/ico-closed.png")
