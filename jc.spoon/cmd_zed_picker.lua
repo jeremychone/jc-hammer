@@ -5,6 +5,33 @@ local term = dofile(spoonPath .. "/term.lua")
 
 local DEBUG = false
 
+-- === Load assets
+local IMAGE_OPENED = hs.image.imageFromPath(spoonPath .. "/images/ico-opened.png")
+local IMAGE_CLOSED = hs.image.imageFromPath(spoonPath .. "/images/ico-closed.png")
+local IMAGE_OPENED_TERM = hs.image.imageFromPath(spoonPath .. "/images/ico-opened-term.png")
+local IMAGE_CLOSED_TERM = hs.image.imageFromPath(spoonPath .. "/images/ico-closed-term.png")
+
+
+local function build_choices(...)
+	local choices = {}
+	for _, list in ipairs({ ... }) do
+		for _, ws in ipairs(list) do
+			local text = (ws.name or ws.display_name or ws.path)
+			local image = ws.is_open and IMAGE_OPENED or IMAGE_CLOSED
+			if ws.term then
+				image = ws.is_open and IMAGE_OPENED_TERM or IMAGE_CLOSED_TERM
+			end
+			table.insert(choices, {
+				text = text,
+				subText = ws.path,
+				image = image,
+				data = ws,
+			})
+		end
+	end
+	return choices
+end
+
 local function apply_term(...)
 	local term_list = term.list_zed_terms()
 	local term_by_path = {}
@@ -13,7 +40,7 @@ local function apply_term(...)
 			term_by_path[t.path:gsub("/+$", "")] = t
 		end
 	end
-	for _, workspaces in ipairs({...}) do
+	for _, workspaces in ipairs({ ... }) do
 		for _, ws in ipairs(workspaces) do
 			if ws.path then
 				local normalized = ws.path:gsub("/+$", "")
@@ -27,7 +54,7 @@ local function apply_term(...)
 end
 
 
-local function refresh_chooser(chooser_inst, options, config)
+local function refresh_chooser(chooser_inst, config)
 	local new_open_ws = zed.list_open_zed()
 	local new_recent_ws = zed.list_recent_zed_projects()
 	local new_matched, new_remaining = zed.categorize_workspaces(new_open_ws, new_recent_ws)
@@ -36,27 +63,7 @@ local function refresh_chooser(chooser_inst, options, config)
 		apply_term(new_matched, new_remaining)
 	end
 
-	local new_choices = {}
-	for _, ws in ipairs(new_matched) do
-		local text = (ws.name or ws.display_name or ws.path)
-		if ws.term then text = text .. " (term)" end
-		table.insert(new_choices, {
-			text = text,
-			subText = ws.path,
-			image = options.image_opened,
-			data = ws,
-		})
-	end
-	for _, ws in ipairs(new_remaining) do
-		local text = (ws.name or ws.display_name or ws.path)
-		if ws.term then text = text .. " (term)" end
-		table.insert(new_choices, {
-			text = text,
-			subText = ws.path,
-			image = options.image_closed,
-			data = ws,
-		})
-	end
+	local new_choices = build_choices(new_matched, new_remaining)
 	chooser_inst:choices(new_choices)
 	-- Reset the query to show all refreshed choices
 	chooser_inst:query("")
@@ -69,10 +76,6 @@ local function re_focus(win)
 end
 
 local function show_zed_picker(config)
-	-- === Load assets
-	local image_opened = hs.image.imageFromPath(spoonPath .. "/images/ico-opened.png")
-	local image_closed = hs.image.imageFromPath(spoonPath .. "/images/ico-closed.png")
-
 	-- === Debug: list zed terms
 	if config.term then
 		local dev_terms = term.list_zed_terms()
@@ -114,27 +117,7 @@ local function show_zed_picker(config)
 	end
 
 	-- == Build the choices
-	local choices = {}
-	for _, ws in ipairs(matched) do
-		local text = (ws.name or ws.display_name or ws.path)
-		if ws.term then text = text .. " (term)" end
-		table.insert(choices, {
-			text = text,
-			subText = ws.path,
-			image = image_opened,
-			data = ws,
-		})
-	end
-	for _, ws in ipairs(remaining) do
-		local text = (ws.name or ws.display_name or ws.path)
-		if ws.term then text = text .. " (term)" end
-		table.insert(choices, {
-			text = text,
-			subText = ws.path,
-			image = image_closed,
-			data = ws,
-		})
-	end
+	local choices = build_choices(matched, remaining)
 
 	-- === Helper to refresh the chooser content after a window close.
 
@@ -180,7 +163,7 @@ local function show_zed_picker(config)
 		if is_do_sticky then
 			-- Refresh the picker content while keeping it open.
 			hs.timer.doAfter(0.1, function()
-				refresh_chooser(chooser, { image_opened = image_opened, image_closed = image_closed }, config)
+				refresh_chooser(chooser, config)
 				if chooser_pos then
 					chooser:show(chooser_pos)
 				else
