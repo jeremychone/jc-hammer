@@ -81,6 +81,10 @@ end
 
 local function wks_focus(ws)
 	local win = ws.window_id and hs.window.get(ws.window_id)
+	local win_term = ws.term and ws.term.win
+	if win_term then
+		ws.term.win:focus()
+	end
 	if win then
 		win:focus()
 	end
