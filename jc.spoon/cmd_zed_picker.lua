@@ -109,19 +109,19 @@ local function show_zed_picker(config)
 		print("--- DEBUG START Zed Workspace Picker Debug ---")
 		print("Open workspaces (raw):")
 		for i, ws in ipairs(open_ws) do
-			print(i, ws.path, ws.display_name, ws.active_file)
+			print("- " .. ws.path)
 		end
 		print("Recent DB entries (raw):")
 		for i, ws in ipairs(recent_ws) do
-			print(i, ws.path, ws.timestamp)
+			print("- " .. ws.path)
 		end
 		print("Matched open workspaces:")
 		for i, ws in ipairs(matched) do
-			print(i, ws.path, ws.is_open)
+			print("- " .. ws.path)
 		end
 		print("Remaining recent workspaces:")
 		for i, ws in ipairs(remaining) do
-			print(i, ws.path, ws.is_open)
+			print("- " .. ws.path)
 		end
 		print("--- DEBUG END   Zed Workspace Picker Debug ---")
 	end
