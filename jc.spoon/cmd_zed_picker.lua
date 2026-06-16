@@ -69,20 +69,33 @@ local function refresh_chooser(chooser_inst, config)
 	chooser_inst:query("")
 end
 
-local function re_focus(win)
+local function refocus(win)
 	hs.timer.doAfter(0.1, function()
 		win:focus()
 	end)
 end
 
+local function wks_open(ws)
+	hs.execute("open -a Zed '" .. ws.path .. "'")
+end
+
+local function wks_focus(ws)
+	local win = ws.window_id and hs.window.get(ws.window_id)
+	if win then
+		win:focus()
+	end
+end
+
+
 local function show_zed_picker(config)
 	-- === Debug: list zed terms
-	if config.term then
+	if DEBUG and config.term then
 		local dev_terms = term.list_zed_terms()
-		print("--- Zed Terms ---")
+		print("--- DEBUG START Zed Terms ---")
 		for i, t in ipairs(dev_terms) do
 			print(i .. " title: " .. t.title .. "\npath: " .. t.path .. "\nid: " .. t.win:id() .. "\nwin:", t.win)
 		end
+		print("--- DEBUG END   Zed Terms ---")
 	end
 
 	-- === Get the zed info
@@ -93,7 +106,7 @@ local function show_zed_picker(config)
 
 	-- === Debug
 	if DEBUG then
-		print("--- Zed Workspace Picker Debug ---")
+		print("--- DEBUG START Zed Workspace Picker Debug ---")
 		print("Open workspaces (raw):")
 		for i, ws in ipairs(open_ws) do
 			print(i, ws.path, ws.display_name, ws.active_file)
@@ -110,6 +123,7 @@ local function show_zed_picker(config)
 		for i, ws in ipairs(remaining) do
 			print(i, ws.path, ws.is_open)
 		end
+		print("--- DEBUG END   Zed Workspace Picker Debug ---")
 	end
 
 	if config.term then
@@ -148,14 +162,14 @@ local function show_zed_picker(config)
 		else
 			-- ELSE: otherwise, we are in open mode
 			if not ws.is_open then
-				hs.execute("open -a Zed '" .. ws.path .. "'")
+				wks_open(ws)
 				if is_do_sticky and current_win then
-					re_focus(current_win)
+					refocus(current_win)
 				end
 			elseif win then
-				win:focus()
+				wks_focus(ws)
 				if is_do_sticky and current_win then
-					re_focus(current_win)
+					refocus(current_win)
 				end
 			end
 		end
