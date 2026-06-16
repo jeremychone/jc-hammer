@@ -1,3 +1,5 @@
+# Spec: Zed DB Info
+
 Goal: Update the Hammerspoon/Zed project picker list.
 
 Need two groups:
@@ -10,7 +12,7 @@ Zed app state database path on macOS:
 
 Relevant tables and schemas discovered:
 
-workspaces:
+### workspaces
 
 ```sql
 CREATE TABLE IF NOT EXISTS "workspaces" (
@@ -43,7 +45,7 @@ CREATE TABLE IF NOT EXISTS "workspaces" (
 ) STRICT;
 ```
 
-panes:
+### panes
 
 ```sql
 CREATE TABLE panes (
@@ -55,7 +57,7 @@ CREATE TABLE panes (
 ) STRICT;
 ```
 
-items:
+### items
 
 ```sql
 CREATE TABLE items (
@@ -72,7 +74,7 @@ CREATE TABLE items (
 ) STRICT;
 ```
 
-editors:
+### editors
 
 ```sql
 CREATE TABLE IF NOT EXISTS "editors" (

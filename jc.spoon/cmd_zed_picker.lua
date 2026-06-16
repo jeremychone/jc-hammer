@@ -90,6 +90,13 @@ local function wks_focus(ws)
 	end
 end
 
+local function wks_close(ws)
+	local win = ws.window_id and hs.window.get(ws.window_id)
+	if win then
+		win:close()
+	end
+end
+
 
 local function show_zed_picker(config)
 	-- === Debug: list zed terms
@@ -160,9 +167,7 @@ local function show_zed_picker(config)
 
 		if is_do_close then
 			-- IF: if is_do_close, then we close the open window
-			if win then
-				win:close()
-			end
+			wks_close(ws)
 		else
 			-- ELSE: otherwise, we are in open mode
 			if not ws.is_open then
