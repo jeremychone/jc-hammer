@@ -12,16 +12,16 @@ The module depends on `jc.spoon.zed` for retrieving information about the active
 
 Core functions:
 
-| Function                                         | Description                                                                                                  |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `term.list_open_alacritty()`                     | Return all open Alacritty windows, each as `{ title, bounds, window_id }`.                                   |
-| `term.find_terminal_by_basename(basename)`       | Return the first Alacritty window whose title matches `basename` exactly, or `nil`.                          |
-| `term.get_active_zed_workspace()`                | Return `{ path, basename }` for the currently focused Zed window, or `nil`.                                  |
-| `term.open_new_terminal(project_path, basename)` | Launch a new Alacritty window with `--working-directory` and `--title`.                                      |
-| `term.position(zed_win, term_win, position)`      | Position terminal based on `position`: `"below"` (directly below Zed, sharing x/width) or `"bottom"` (bottom screen edge, full width). Both use 30% height. |
-| `term.focus_or_open(zed_workspace, mode)`        | Orchestrate: find and focus a matching terminal, or open new and position.                                   |
-| `term.open_terminal_for_active_project(mode)`    | Convenience for active Zed window: `get_active_zed_workspace()` + `focus_or_open`.                           |
-| `term.bind_hotkey()`                             | Register global hotkey `Cmd+Ctrl+Shift+T` to trigger `open_terminal_for_active_project` with a default mode. |
+| Function                                         | Description                                                                                                                                                 |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `term.list_open_alacritty()`                     | Return all open Alacritty windows, each as `{ title, bounds, window_id }`.                                                                                  |
+| `term.find_terminal_by_basename(basename)`       | Return the first Alacritty window whose title matches `basename` exactly, or `nil`.                                                                         |
+| `term.get_active_zed_workspace()`                | Return `{ path, basename }` for the currently focused Zed window, or `nil`.                                                                                 |
+| `term.open_new_terminal(project_path, basename)` | Launch a new Alacritty window with `--working-directory` and `--title`.                                                                                     |
+| `term.position(zed_win, term_win, position)`     | Position terminal based on `position`: `"below"` (directly below Zed, sharing x/width) or `"bottom"` (bottom screen edge, full width). Both use 30% height. |
+| `term.focus_or_open(zed_workspace, mode)`        | Orchestrate: find and focus a matching terminal, or open new and position.                                                                                  |
+| `term.open_terminal_for_active_project(mode)`    | Convenience for active Zed window: `get_active_zed_workspace()` + `focus_or_open`.                                                                          |
+| `term.bind_hotkey()`                             | Register global hotkey `Cmd+Ctrl+Shift+T` to trigger `open_terminal_for_active_project` with a default mode.                                                |
 
 ### Data flow
 

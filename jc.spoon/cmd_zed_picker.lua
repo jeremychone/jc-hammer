@@ -1,6 +1,7 @@
 local spoonPath = hs.spoons.resourcePath("")
 
 local zed = dofile(spoonPath .. "/zed.lua")
+local term = dofile(spoonPath .. "/term.lua")
 
 local DEBUG = false
 
@@ -37,10 +38,17 @@ local function re_focus(win)
 	end)
 end
 
-function show_zed_picker(config)
+local function show_zed_picker(config)
 	-- === Load assets
 	local image_open = hs.image.imageFromPath(spoonPath .. "/images/ico-opened.png")
 	local image_closed = hs.image.imageFromPath(spoonPath .. "/images/ico-closed.png")
+
+	-- === Debug: list zed terms
+	local dev_terms = term.list_zed_terms()
+	print("--- Zed Terms ---")
+	for i, t in ipairs(dev_terms) do
+		print(i .. " title: " .. t.title .. "\npath: " .. t.path .. "\nid: " .. t.win:id() .. "\nwin:", t.win)
+	end
 
 	-- === Get the zed info
 	local open_ws = zed.list_open_zed()
