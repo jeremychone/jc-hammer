@@ -3,6 +3,7 @@
 
 local obj = {}
 
+-- Returns: {title, string, win}[]
 function obj.list_zed_terms()
 	local alacritty = hs.application.get("Alacritty")
 	if not alacritty then

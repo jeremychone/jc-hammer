@@ -5,19 +5,22 @@ local term = dofile(spoonPath .. "/term.lua")
 
 local DEBUG = false
 
-local function apply_term_indicator(workspaces)
+local function apply_term(...)
 	local term_list = term.list_zed_terms()
-	local term_paths = {}
+	local term_by_path = {}
 	for _, t in ipairs(term_list) do
 		if t.path and t.path ~= "" then
-			term_paths[t.path:gsub("/+$", "")] = true
+			term_by_path[t.path:gsub("/+$", "")] = t
 		end
 	end
-	for _, ws in ipairs(workspaces) do
-		if ws.path then
-			local normalized = ws.path:gsub("/+$", "")
-			if term_paths[normalized] then
-				ws.has_term = true
+	for _, workspaces in ipairs({...}) do
+		for _, ws in ipairs(workspaces) do
+			if ws.path then
+				local normalized = ws.path:gsub("/+$", "")
+				local term_info = term_by_path[normalized]
+				if term_info then
+					ws.term = term_info
+				end
 			end
 		end
 	end
@@ -30,24 +33,23 @@ local function refresh_chooser(chooser_inst, options, config)
 	local new_matched, new_remaining = zed.categorize_workspaces(new_open_ws, new_recent_ws)
 
 	if config.term then
-		apply_term_indicator(new_matched)
-		apply_term_indicator(new_remaining)
+		apply_term(new_matched, new_remaining)
 	end
 
 	local new_choices = {}
 	for _, ws in ipairs(new_matched) do
 		local text = (ws.name or ws.display_name or ws.path)
-		if ws.has_term then text = text .. " (term)" end
+		if ws.term then text = text .. " (term)" end
 		table.insert(new_choices, {
 			text = text,
 			subText = ws.path,
-			image = options.image_open,
+			image = options.image_opened,
 			data = ws,
 		})
 	end
 	for _, ws in ipairs(new_remaining) do
 		local text = (ws.name or ws.display_name or ws.path)
-		if ws.has_term then text = text .. " (term)" end
+		if ws.term then text = text .. " (term)" end
 		table.insert(new_choices, {
 			text = text,
 			subText = ws.path,
@@ -68,7 +70,7 @@ end
 
 local function show_zed_picker(config)
 	-- === Load assets
-	local image_open = hs.image.imageFromPath(spoonPath .. "/images/ico-opened.png")
+	local image_opened = hs.image.imageFromPath(spoonPath .. "/images/ico-opened.png")
 	local image_closed = hs.image.imageFromPath(spoonPath .. "/images/ico-closed.png")
 
 	-- === Debug: list zed terms
@@ -108,25 +110,24 @@ local function show_zed_picker(config)
 	end
 
 	if config.term then
-		apply_term_indicator(matched)
-		apply_term_indicator(remaining)
+		apply_term(matched, remaining)
 	end
 
 	-- == Build the choices
 	local choices = {}
 	for _, ws in ipairs(matched) do
 		local text = (ws.name or ws.display_name or ws.path)
-		if ws.has_term then text = text .. " (term)" end
+		if ws.term then text = text .. " (term)" end
 		table.insert(choices, {
 			text = text,
 			subText = ws.path,
-			image = image_open,
+			image = image_opened,
 			data = ws,
 		})
 	end
 	for _, ws in ipairs(remaining) do
 		local text = (ws.name or ws.display_name or ws.path)
-		if ws.has_term then text = text .. " (term)" end
+		if ws.term then text = text .. " (term)" end
 		table.insert(choices, {
 			text = text,
 			subText = ws.path,
@@ -179,7 +180,7 @@ local function show_zed_picker(config)
 		if is_do_sticky then
 			-- Refresh the picker content while keeping it open.
 			hs.timer.doAfter(0.1, function()
-				refresh_chooser(chooser, { image_open = image_open, image_closed = image_closed }, config)
+				refresh_chooser(chooser, { image_opened = image_opened, image_closed = image_closed }, config)
 				if chooser_pos then
 					chooser:show(chooser_pos)
 				else
