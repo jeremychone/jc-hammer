@@ -92,8 +92,24 @@ end
 
 local function wks_close(ws)
 	local win = ws.window_id and hs.window.get(ws.window_id)
+	local win_term = ws.term and ws.term.win
+
 	if win then
 		win:close()
+	end
+
+	-- send the tmux jc close session command
+	if win_term then
+		local prev_focused_win = hs.window.focusedWindow()
+
+		win_term:focus()
+		hs.eventtap.keyStroke({ "ctrl" }, "k")
+		hs.timer.usleep(10000)
+		hs.eventtap.keyStroke({}, "X")
+
+		if prev_focused_win then
+			prev_focused_win:focus()
+		end
 	end
 end
 
