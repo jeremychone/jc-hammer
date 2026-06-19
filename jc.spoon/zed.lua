@@ -15,6 +15,7 @@ local zed = {}
 
 local spoonPath = hs.spoons.resourcePath("")
 local utils = dofile(spoonPath .. "/utils.lua")
+local term = dofile(spoonPath .. "/term.lua")
 
 -- List currently open Zed windows and return ZedWorkspace entries.
 function zed.list_open_zed()
@@ -244,6 +245,50 @@ function zed.categorize_workspaces(open_workspaces, recent_entries)
 	table.sort(remaining_recent, ts_desc)
 
 	return matched_open, remaining_recent
+end
+
+-- Get the currently focused Zed workspace with optional terminal information.
+-- Returns a ZedWorkspace-like table with an additional `window` field (the hs.window)
+-- and an optional `term` field { win = hs.window } if a matching terminal is found.
+-- Returns nil if the focused window is not a Zed window.
+function zed.get_current_zed()
+	local win = hs.window.focusedWindow()
+	if not win then return nil end
+
+	local app = win:application()
+	if not app or app:name() ~= "Zed" then return nil end
+
+	local title = win:title() or ""
+
+	-- Parse typical "Project — file" format, same logic as list_open_zed and get_main_zed_workspace.
+	local project, file = title:match("^(.-)%s+—%s+(.+)$")
+	if not project then
+		project, file = title:match("^(.-)%s+%-%s+(.+)$")
+	end
+	if not project then
+		project = title
+		file = nil
+	end
+
+	local name = project:match("[^/]+$") or project
+	local basename = name
+
+	-- Try to find a matching terminal
+	local term_win = term.find_terminal_by_basename(basename)
+
+	local ws = {
+		path         = project,
+		name         = name,
+		display_name = name,
+		active_file  = file,
+		is_open      = true,
+		timestamp    = nil,
+		window_id    = win:id(),
+		window       = win,
+		basename     = basename,
+		term         = term_win and { win = term_win } or nil,
+	}
+	return ws
 end
 
 return zed

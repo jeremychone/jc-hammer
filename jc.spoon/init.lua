@@ -18,6 +18,17 @@ local function init()
 		local cmd_zed_picker = dofile(spoonPath .. "/cmd_zed_picker.lua")
 		cmd_zed_picker.show_zed_picker(config)
 	end)
+
+	-- Terminal positioning hotkeys (below / bottom) when enabled in config.
+	if config.term then
+		local cmd_term = dofile(spoonPath .. "/cmd_term.lua")
+		hs.hotkey.bind({ "ctrl", "shift", "cmd" }, "p", function()
+			cmd_term.term_position({ mode = "below" })
+		end)
+		hs.hotkey.bind({ "ctrl", "shift", "cmd", "alt" }, "P", function()
+			cmd_term.term_position({ mode = "bottom" })
+		end)
+	end
 end
 
 -- --- /Init Function

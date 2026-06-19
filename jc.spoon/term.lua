@@ -30,4 +30,23 @@ function obj.list_zed_terms()
 	return result
 end
 
+-- Find a terminal window by matching the project basename exactly.
+-- Matches the basename extracted from the terminal's path (regardless of whether
+-- the terminal title contains the full path or only the basename).
+function obj.find_terminal_by_basename(basename)
+	if not basename or basename == "" then return nil end
+	local normalized_basename = basename:gsub("/+$", "")
+	local terms = obj.list_zed_terms()
+	for _, term in ipairs(terms) do
+		local term_path = term.path
+		if term_path and term_path ~= "" then
+			local term_basename = term_path:gsub("/+$", ""):match("[^/]+$")
+			if term_basename == normalized_basename then
+				return term.win
+			end
+		end
+	end
+	return nil
+end
+
 return obj

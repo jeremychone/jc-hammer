@@ -3,6 +3,7 @@
 ## Intent
 
 Provide a Hammerspoon spoon (`jc.spoon/term`) that opens or focuses an Alacritty terminal window paired with the currently active Zed editor project. The pairing is based on the project directory basename. Two layout modes are supported: placing the terminal directly below the editor window (“below”), or pinning it to the bottom edge of the screen (“bottom”). The functionality is triggered by a global hotkey (`Cmd+Ctrl+Shift+T`).
+Provide a Hammerspoon spoon (`jc.spoon/term`) that opens or focuses an Alacritty terminal window paired with the currently active Zed editor project. The pairing is based on the project directory basename. Two layout modes are supported: placing the terminal directly below the editor window (“below”), or aligning the terminal’s bottom with the bottom of the editor window, minus a margin, so that it appears as a panel at the bottom of the editor (“bottom”). The functionality is triggered by a global hotkey (`Cmd+Ctrl+Shift+T`).
 
 ## Code Design
 
@@ -18,10 +19,14 @@ Core functions:
 | `term.find_terminal_by_basename(basename)`       | Return the first Alacritty window whose title matches `basename` exactly, or `nil`.                                                                         |
 | `term.get_active_zed_workspace()`                | Return `{ path, basename }` for the currently focused Zed window, or `nil`.                                                                                 |
 | `term.open_new_terminal(project_path, basename)` | Launch a new Alacritty window with `--working-directory` and `--title`.                                                                                     |
-| `term.position(zed_win, term_win, position)`     | Position terminal based on `position`: `"below"` (directly below Zed, sharing x/width) or `"bottom"` (bottom screen edge, full width). Both use 30% height. |
+| `term.position(zed_win, term_win, position)`     | Position terminal based on `position`: `"below"` (centered horizontally under Zed, 4px gap, keeps current size) or `"bottom"` (aligns bottom with Zed window bottom minus a 4px margin, centered horizontally, keeps current size) |
 | `term.focus_or_open(zed_workspace, mode)`        | Orchestrate: find and focus a matching terminal, or open new and position.                                                                                  |
 | `term.open_terminal_for_active_project(mode)`    | Convenience for active Zed window: `get_active_zed_workspace()` + `focus_or_open`.                                                                          |
 | `term.bind_hotkey()`                             | Register global hotkey `Cmd+Ctrl+Shift+T` to trigger `open_terminal_for_active_project` with a default mode.                                                |
+
+Additionally, the actual terminal positioning is implemented in `jc.spoon/cmd_term.lua` and bound to the following hotkeys:
+- `Ctrl+Shift+Cmd+P` for "below" mode
+- `Ctrl+Shift+Cmd+Alt+P` for "bottom" mode
 
 ### Data flow
 
@@ -49,5 +54,5 @@ Uses Hammerspoon’s `hs.window` module to find windows by application name (“
 - **Matching simplicity**: Uses exact basename match on the window title. No disambiguation for name collisions; the first match wins.
 - **No environment sourcing**: The terminal opens directly in the project directory; no extra environment setup (nix-shell, direnv) is performed.
 - **No repositioning on existing match**: When a matching terminal already exists, it is only focused (brought to front) without moving it, preserving any custom layout the user may have arranged.
-- **Layout modes**: Two modes cover common workflows: “below” keeps the terminal attached to the editor window (moves with it if the editor is moved), while “bottom” always occupies the full width screen bottom, providing a consistent panel.
+- **Layout modes**: Two modes cover common workflows: “below” keeps the terminal attached to the editor window (moves with it if the editor is moved), while “bottom” aligns the terminal’s bottom edge with the editor window’s bottom, minus a small margin (default 4px), effectively creating a bottom panel overlay on the editor, centered horizontally.
 - **Hotkey isolation**: Using a separate, dedicated hotkey (`Cmd+Ctrl+Shift+T`) avoids interference with the existing Zed chooser workflow.
