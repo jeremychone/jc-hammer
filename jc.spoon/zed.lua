@@ -256,39 +256,88 @@ function zed.get_current_zed()
 	if not win then return nil end
 
 	local app = win:application()
-	if not app or app:name() ~= "Zed" then return nil end
+	if not app then return nil end
+	local app_name = app:name()
 
-	local title = win:title() or ""
+	if app_name == "Zed" then
+		local title = win:title() or ""
 
-	-- Parse typical "Project — file" format, same logic as list_open_zed and get_main_zed_workspace.
-	local project, file = title:match("^(.-)%s+—%s+(.+)$")
-	if not project then
-		project, file = title:match("^(.-)%s+%-%s+(.+)$")
+		-- Parse typical "Project — file" format, same logic as list_open_zed and get_main_zed_workspace.
+		local project, file = title:match("^(.-)%s+—%s+(.+)$")
+		if not project then
+			project, file = title:match("^(.-)%s+%-%s+(.+)$")
+		end
+		if not project then
+			project = title
+			file = nil
+		end
+
+		local name = project:match("[^/]+$") or project
+		local basename = name
+
+		-- Try to find a matching terminal
+		local term_win = term.find_terminal_by_basename(basename)
+
+		local ws = {
+			path         = project,
+			name         = name,
+			display_name = name,
+			active_file  = file,
+			is_open      = true,
+			timestamp    = nil,
+			window_id    = win:id(),
+			window       = win,
+			basename     = basename,
+			term         = term_win and { win = term_win } or nil,
+		}
+		return ws
+	elseif app_name == "Alacritty" then
+		-- When the focused window is a zed-associated terminal, locate the matching Zed window
+		-- so that commands like term_position can still use the Zed frame geometry.
+		local title = win:title() or ""
+		local path = title:match("zed term %- (.+)")
+		if not path then
+			return nil
+		end
+		local term_basename = path:gsub("/+$", ""):match("[^/]+$")
+		if not term_basename then
+			return nil
+		end
+
+		local zed_app = hs.application.get("Zed")
+		if not zed_app then return nil end
+		for _, zwin in ipairs(zed_app:allWindows()) do
+			local ztitle = zwin:title() or ""
+			local zproject, zfile = ztitle:match("^(.-)%s+—%s+(.+)$")
+			if not zproject then
+				zproject, zfile = ztitle:match("^(.-)%s+%-%s+(.+)$")
+			end
+			if not zproject then
+				zproject = ztitle
+				zfile = nil
+			end
+			local zbasename = zproject:match("[^/]+$") or zproject
+			if zbasename == term_basename then
+				local name = zbasename
+				local ws = {
+					path         = zproject,
+					name         = name,
+					display_name = name,
+					active_file  = zfile,
+					is_open      = true,
+					timestamp    = nil,
+					window_id    = zwin:id(),
+					window       = zwin,
+					basename     = zbasename,
+					term         = { win = win },
+				}
+				return ws
+			end
+		end
+		return nil
 	end
-	if not project then
-		project = title
-		file = nil
-	end
 
-	local name = project:match("[^/]+$") or project
-	local basename = name
-
-	-- Try to find a matching terminal
-	local term_win = term.find_terminal_by_basename(basename)
-
-	local ws = {
-		path         = project,
-		name         = name,
-		display_name = name,
-		active_file  = file,
-		is_open      = true,
-		timestamp    = nil,
-		window_id    = win:id(),
-		window       = win,
-		basename     = basename,
-		term         = term_win and { win = term_win } or nil,
-	}
-	return ws
+	return nil
 end
 
 return zed
