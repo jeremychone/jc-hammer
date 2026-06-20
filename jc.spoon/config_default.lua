@@ -2,5 +2,5 @@
 
 return {
 	-- JC Term scheme (alacritty + tmux, with auto positioning, snapping, and closing)
-	-- term = false
+	-- term = true
 }

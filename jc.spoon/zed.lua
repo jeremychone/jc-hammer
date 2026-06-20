@@ -17,6 +17,42 @@ local spoonPath = hs.spoons.resourcePath("")
 local utils = dofile(spoonPath .. "/utils.lua")
 local term = dofile(spoonPath .. "/term.lua")
 
+-- Private helpers -----------------------------------------------------------------
+
+-- Parse a Zed window title of the form "Project — file" or "Project - file".
+-- Returns project, file (file may be nil).
+local function _parse_zed_title(title)
+	local project, file = title:match("^(.-)%s+—%s+(.+)$")
+	if not project then
+		project, file = title:match("^(.-)%s+%-%s+(.+)$")
+	end
+	if not project then
+		project = title
+		file = nil
+	end
+	return project, file
+end
+
+-- Extract the basename from a project path or title string, falling back to
+-- the whole string when no slash is present.
+local function _basename(str)
+	return str:match("[^/]+$") or str
+end
+
+-- Look through all Zed windows and find one whose title-derived basename matches
+-- the given target_basename. Returns the window, project, and file if found.
+local function _find_zed_window_by_basename(app, target_basename)
+	for _, zwin in ipairs(app:allWindows()) do
+		local title = zwin:title() or ""
+		local project, file = _parse_zed_title(title)
+		local zbasename = _basename(project)
+		if zbasename == target_basename then
+			return zwin, project, file
+		end
+	end
+	return nil
+end
+
 -- List currently open Zed windows and return ZedWorkspace entries.
 function zed.list_open_zed()
 	local app = hs.application.get("Zed")
@@ -30,18 +66,11 @@ function zed.list_open_zed()
 		-- Support the em-dash separator, a plain hyphen separator, and titles
 		-- that are just a folder name. Fall back to the whole title when no
 		-- separator is present so we always get a usable name.
-		local project, file = title:match("^(.-)%s+—%s+(.+)$")
-		if not project then
-			project, file = title:match("^(.-)%s+%-%s+(.+)$")
-		end
-		if not project then
-			project = title
-			file = nil
-		end
+		local project, file = _parse_zed_title(title)
 
 		-- The directory basename is the project folder name (e.g. "jc-hammer"),
 		-- not the active file.
-		local name = project:match("[^/]+$") or project
+		local name = _basename(project)
 		local display = name
 
 		local ws = {
@@ -57,6 +86,8 @@ function zed.list_open_zed()
 	end
 	return workspaces
 end
+
+-- Public functions -----------------------------------------------------------------
 
 -- List recent Zed projects from the SQLite database.
 function zed.list_recent_zed_projects()
@@ -263,16 +294,9 @@ function zed.get_current_zed()
 		local title = win:title() or ""
 
 		-- Parse typical "Project — file" format, same logic as list_open_zed and get_main_zed_workspace.
-		local project, file = title:match("^(.-)%s+—%s+(.+)$")
-		if not project then
-			project, file = title:match("^(.-)%s+%-%s+(.+)$")
-		end
-		if not project then
-			project = title
-			file = nil
-		end
+		local project, file = _parse_zed_title(title)
 
-		local name = project:match("[^/]+$") or project
+		local name = _basename(project)
 		local basename = name
 
 		-- Try to find a matching terminal
@@ -306,35 +330,23 @@ function zed.get_current_zed()
 
 		local zed_app = hs.application.get("Zed")
 		if not zed_app then return nil end
-		for _, zwin in ipairs(zed_app:allWindows()) do
-			local ztitle = zwin:title() or ""
-			local zproject, zfile = ztitle:match("^(.-)%s+—%s+(.+)$")
-			if not zproject then
-				zproject, zfile = ztitle:match("^(.-)%s+%-%s+(.+)$")
-			end
-			if not zproject then
-				zproject = ztitle
-				zfile = nil
-			end
-			local zbasename = zproject:match("[^/]+$") or zproject
-			if zbasename == term_basename then
-				local name = zbasename
-				local ws = {
-					path         = zproject,
-					name         = name,
-					display_name = name,
-					active_file  = zfile,
-					is_open      = true,
-					timestamp    = nil,
-					window_id    = zwin:id(),
-					window       = zwin,
-					basename     = zbasename,
-					term         = { win = win },
-				}
-				return ws
-			end
-		end
-		return nil
+		local zwin, zproject, zfile = _find_zed_window_by_basename(zed_app, term_basename)
+		if not zwin then return nil end
+
+		local name = _basename(zproject) or zproject
+		local ws = {
+			path         = zproject,
+			name         = name,
+			display_name = name,
+			active_file  = zfile,
+			is_open      = true,
+			timestamp    = nil,
+			window_id    = zwin:id(),
+			window       = zwin,
+			basename     = _basename(zproject) or zproject,
+			term         = { win = win },
+		}
+		return ws
 	end
 
 	return nil
