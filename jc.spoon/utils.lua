@@ -35,7 +35,7 @@ end
 
 -- Load user config if present, otherwise default config.
 local function load_config(spoonPath)
-	local user_path = spoonPath .. "/config_user.lua"
+	local user_path = spoonPath .. "/.user/config_user.lua"
 	local default_path = spoonPath .. "/config_default.lua"
 	local ok, result = pcall(dofile, user_path)
 	if ok and result then

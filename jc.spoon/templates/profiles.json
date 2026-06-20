@@ -1,0 +1,47 @@
+{
+  "order": ["default","demo"],
+  "default": {
+    "zed_config": [
+      {
+        "config_path": ["ui_font_size"],
+        "value": 18
+      },
+      {
+        "config_path": ["buffer_font_size"],
+        "value": 18
+      }
+    ],
+    "alacritty_config": [
+      {
+        "config_path": ["font", "size"],
+        "value": 16
+      }
+    ],
+    "terminal_dims": {
+      "width": 1816,
+      "height": 499
+    }
+  },
+  "demo": {
+    "zed_config": [
+      {
+        "config_path": ["ui_font_size"],
+        "value": 24
+      },
+      {
+        "config_path": ["buffer_font_size"],
+        "value": 24
+      }
+    ],
+    "alacritty_config": [
+      {
+        "config_path": ["font", "size"],
+        "value": 20
+      }
+    ],
+    "terminal_dims": {
+      "width": 1816,
+      "height": 512
+    }
+  }
+}
