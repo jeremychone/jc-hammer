@@ -53,14 +53,14 @@ function obj.term_position(params)
 			else
 				alacritty_bin = "/Applications/Alacritty.app/Contents/MacOS/alacritty"
 			end
-			local cmd = nil
 
 			local title = "zed term - " .. project_path
 			local core_cmd = string.format(
-				"--title %q --working-directory %q",
+				"--title %q --working-directory %q -e /opt/homebrew/bin/tmux new-session",
 				title,
 				project_path
 			)
+
 			local cmd
 			if is_alacritty_proc_running then
 				-- This will use the IPC way
@@ -103,6 +103,9 @@ function obj.term_position(params)
 	if not term_win then
 		return {}
 	end
+
+	-- term_win:focus()
+	-- hs.eventtap.keyStrokes("tmux\n")
 
 	-- Load profile dimensions, fall back to current size if unavailable
 	local dims = profile.load_profile(spoonPath)
