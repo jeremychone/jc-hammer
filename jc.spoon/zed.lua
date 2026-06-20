@@ -352,4 +352,17 @@ function zed.get_current_zed()
 	return nil
 end
 
+-- Resolve the full workspace path for a given project basename by looking in
+-- the recent workspaces database. Returns the full path or nil if not found.
+function zed.resolve_project_path(basename)
+	if not basename then return nil end
+	local recent = zed.list_recent_zed_projects()
+	for _, entry in ipairs(recent) do
+		if entry.name == basename then
+			return entry.path
+		end
+	end
+	return nil
+end
+
 return zed

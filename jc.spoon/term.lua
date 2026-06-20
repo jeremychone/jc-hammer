@@ -5,12 +5,18 @@ local obj = {}
 
 -- Returns: {title, string, win}[]
 function obj.list_zed_terms()
-	local alacritty = hs.application.get("Alacritty")
+	local result = {}
+
+	local apps = hs.application.applicationsForBundleID("org.alacritty")
+	local alacritty = apps and apps[1]
 	if not alacritty then
 		return {}
 	end
 	local windows = alacritty:allWindows()
-	local result = {}
+	if not windows then
+		return {}
+	end
+
 	for _, win in ipairs(windows) do
 		local title = win:title()
 		-- Exclude windows without a title (e.g., transient / empty ones)
@@ -39,6 +45,7 @@ function obj.find_terminal_by_basename(basename)
 	local terms = obj.list_zed_terms()
 	for _, term in ipairs(terms) do
 		local term_path = term.path
+
 		if term_path and term_path ~= "" then
 			local term_basename = term_path:gsub("/+$", ""):match("[^/]+$")
 			if term_basename == normalized_basename then

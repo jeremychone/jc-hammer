@@ -28,10 +28,10 @@ local function init()
 	if config.term then
 		local cmd_term = dofile(spoon_path .. "/cmd_term.lua")
 		hs.hotkey.bind({ "ctrl", "shift", "cmd" }, "p", function()
-			cmd_term.term_position({ mode = "below" })
+			cmd_term.term_position({ mode = "below", auto_open = true })
 		end)
 		hs.hotkey.bind({ "ctrl", "shift", "cmd", "alt" }, "P", function()
-			cmd_term.term_position({ mode = "bottom" })
+			cmd_term.term_position({ mode = "bottom", auto_open = true })
 		end)
 	end
 end
