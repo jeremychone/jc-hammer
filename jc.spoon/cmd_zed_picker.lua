@@ -105,7 +105,7 @@ local function wks_close(ws)
 		win_term:focus()
 		hs.eventtap.keyStroke({ "ctrl" }, "k")
 		hs.timer.usleep(10000)
-		hs.eventtap.keyStroke({}, "X")
+		hs.eventtap.keyStroke({ "shift" }, "X")
 
 		if prev_focused_win then
 			prev_focused_win:focus()
