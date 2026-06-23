@@ -217,8 +217,8 @@ local function show_zed_picker(config)
 	chooser:width(25)
 
 	-- === Compute Position the chooser relative to the currently focused window (x+100, y+100)
-	-- If the focused window is Finder, let the chooser use its default position.
-	if current_win and current_win:application():name() ~= "Finder" then
+	-- If the focused window is Zed, position the chooser relative to it.
+	if current_win and current_win:application():name():find("Zed", 1, true) then
 		chooser_pos = current_win:topLeft()
 		chooser_pos = hs.geometry.point(chooser_pos.x + 100, chooser_pos.y + 100)
 		-- otherwise show default position (centered)
