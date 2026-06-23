@@ -28,6 +28,8 @@ function obj.term_position(params)
 
 	local auto_open = (type(params) == "table" and params.auto_open) or false
 
+	local is_new = false
+
 	local term_win = ws.term and ws.term.win
 
 	if not term_win then
@@ -94,6 +96,8 @@ function obj.term_position(params)
 					hs.timer.usleep(100000)
 				end
 			end
+
+			is_new = true
 		else
 			hs.alert("No terminal found")
 			return
@@ -118,15 +122,16 @@ function obj.term_position(params)
 		new_h = dims.height
 	end
 
+	local duration = is_new and 0.1 or 0.2
 	if mode == "below" then
 		local new_x = zed_frame.x + (zed_frame.w / 2) - (new_w / 2)
 		local new_y = zed_frame.y + zed_frame.h + 4
-		term_win:setFrame(hs.geometry.rect(new_x, new_y, new_w, new_h))
+		term_win:setFrame(hs.geometry.rect(new_x, new_y, new_w, new_h), duration)
 	elseif mode == "bottom" then
 		local margin = 4
 		local new_x = zed_frame.x + (zed_frame.w / 2) - (new_w / 2)
 		local new_y = zed_frame.y + zed_frame.h - margin - new_h
-		term_win:setFrame(hs.geometry.rect(new_x, new_y, new_w, new_h))
+		term_win:setFrame(hs.geometry.rect(new_x, new_y, new_w, new_h), duration)
 	end
 
 	term_win:focus()
