@@ -89,6 +89,14 @@ end
 
 -- Public functions -----------------------------------------------------------------
 
+--- Return true if win is a Zed window (application name is "Zed").
+function zed.is_zed_win(win)
+	if not win then return false end
+	local app = win:application()
+	if not app then return false end
+	return app:name() == "Zed"
+end
+
 -- List recent Zed projects from the SQLite database.
 function zed.list_recent_zed_projects()
 	local home = os.getenv("HOME")
@@ -286,11 +294,7 @@ function zed.get_current_zed()
 	local win = hs.window.focusedWindow()
 	if not win then return nil end
 
-	local app = win:application()
-	if not app then return nil end
-	local app_name = app:name()
-
-	if app_name == "Zed" then
+	if zed.is_zed_win(win) then
 		local title = win:title() or ""
 
 		-- Parse typical "Project — file" format, same logic as list_open_zed and get_main_zed_workspace.
@@ -315,7 +319,7 @@ function zed.get_current_zed()
 			term         = term_win and { win = term_win } or nil,
 		}
 		return ws
-	elseif app_name == "Alacritty" then
+	elseif win:application() and win:application():name() == "Alacritty" then
 		-- When the focused window is a zed-associated terminal, locate the matching Zed window
 		-- so that commands like term_position can still use the Zed frame geometry.
 		local title = win:title() or ""
