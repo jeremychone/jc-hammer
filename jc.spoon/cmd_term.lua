@@ -113,7 +113,7 @@ function obj.term_position(params)
 
 	-- Load profile dimensions, fall back to current size if unavailable
 	local dims = profile.load_profile(spoonPath)
-	local zed_frame = ws.window:frame()
+	local zed_frame = ws.win:frame()
 	local term_frame = term_win:frame()
 	local new_w = term_frame.w
 	local new_h = term_frame.h

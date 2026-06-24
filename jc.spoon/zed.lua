@@ -363,16 +363,20 @@ function zed.get_zed_workspace_for_win(config, win)
 			is_open      = true,
 			timestamp    = nil,
 			window_id    = win:id(),
-			window       = win,
+			win          = win,
 			basename     = basename,
 			term         = term_info,
 		}
 		return ws
 	elseif win:application() and win:application():name() == "Alacritty" then
 		if not config or not config.term then return nil end
+
+		-- == Check if zed term
 		local title = win:title() or ""
 		local path = title:match("zed term %- (.+)")
 		if not path then return nil end
+
+		-- == look for zed app
 		local term_basename = path:gsub("/+$", ""):match("[^/]+$")
 		if not term_basename then return nil end
 		local zed_app = hs.application.get("Zed")
@@ -380,6 +384,8 @@ function zed.get_zed_workspace_for_win(config, win)
 		local zwin, zproject, zfile = _find_zed_window_by_basename(zed_app, term_basename)
 		if not zwin then return nil end
 		local name = _basename(zproject) or zproject
+
+		-- return
 		local ws = {
 			path         = zproject,
 			name         = name,
@@ -388,7 +394,7 @@ function zed.get_zed_workspace_for_win(config, win)
 			is_open      = true,
 			timestamp    = nil,
 			window_id    = zwin:id(),
-			window       = zwin,
+			win          = zwin,
 			basename     = _basename(zproject) or zproject,
 			term         = { win = win },
 		}
