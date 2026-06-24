@@ -21,7 +21,7 @@ function obj.term_position(params)
 		return
 	end
 
-	local ws = zed.get_current_zed()
+	local ws = zed.get_current_zed({ term = true })
 	if not ws then
 		return
 	end

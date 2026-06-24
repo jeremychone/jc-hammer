@@ -53,6 +53,91 @@ local function _find_zed_window_by_basename(app, target_basename)
 	return nil
 end
 
+
+local function categorize_workspaces(open_workspaces, recent_entries)
+	-- Open windows are first-class: every open window is always included in
+	-- the matched_open list, carrying its live window_id for focusing. Recent
+	-- DB entries are then merged in, enriching matched open entries (e.g. with
+	-- a timestamp) and contributing unmatched entries to remaining_recent.
+	local matched_open = {}
+	local remaining_recent = {}
+	local open_by_key = {}
+	local seen_open_keys = {}
+	local seen_recent_keys = {}
+
+	-- Build the open entries first, keyed by normalized basename so recent
+	-- entries can be matched against them on the same footing.
+	for _, open_ws in ipairs(open_workspaces or {}) do
+		local key = utils.normalize_match_key(open_ws.path) or open_ws.name or open_ws.display_name
+		local ws = {
+			path         = open_ws.path,
+			name         = open_ws.name or open_ws.display_name,
+			display_name = open_ws.display_name,
+			active_file  = open_ws.active_file,
+			is_open      = true,
+			timestamp    = open_ws.timestamp,
+			window_id    = open_ws.window_id,
+			match_key    = key,
+		}
+
+		if key and not seen_open_keys[key] then
+			seen_open_keys[key] = true
+			open_by_key[key] = ws
+			table.insert(matched_open, ws)
+		elseif not key then
+			-- No usable key; still include so the open window is not lost.
+			table.insert(matched_open, ws)
+		end
+	end
+
+	-- Merge recent entries. If a recent entry matches an open entry by key,
+	-- enrich the open entry (notably its timestamp) rather than duplicating.
+	for _, recent in ipairs(recent_entries or {}) do
+		local key = recent.match_key or utils.normalize_match_key(recent.path)
+		local open_match = key and open_by_key[key] or nil
+
+		if open_match then
+			-- Carry over a timestamp so open entries can sort by recency.
+			if not open_match.timestamp and recent.timestamp then
+				open_match.timestamp = recent.timestamp
+			end
+			-- Prefer a real disk path from the DB over a title-derived one.
+			if recent.path and recent.path ~= "" then
+				open_match.path = recent.path
+			end
+			if not open_match.active_file and recent.active_file then
+				open_match.active_file = recent.active_file
+			end
+		else
+			if key and not seen_recent_keys[key] then
+				seen_recent_keys[key] = true
+				local ws = {
+					path         = recent.path,
+					name         = recent.name or recent.display_name,
+					display_name = recent.display_name,
+					active_file  = recent.active_file,
+					is_open      = false,
+					timestamp    = recent.timestamp,
+					window_id    = nil,
+					match_key    = key,
+				}
+				table.insert(remaining_recent, ws)
+			end
+		end
+	end
+
+	-- Sort both lists by timestamp descending.
+	local function ts_desc(a, b)
+		local ta = a.timestamp or 0
+		local tb = b.timestamp or 0
+		return ta > tb
+	end
+	table.sort(matched_open, ts_desc)
+	table.sort(remaining_recent, ts_desc)
+
+	return matched_open, remaining_recent
+end
+
 -- List currently open Zed windows and return ZedWorkspace entries.
 function zed.list_open_zed()
 	local app = hs.application.get("Zed")
@@ -202,110 +287,74 @@ function zed.list_recent_zed_projects()
 	return workspaces
 end
 
-function zed.categorize_workspaces(open_workspaces, recent_entries)
-	-- Open windows are first-class: every open window is always included in
-	-- the matched_open list, carrying its live window_id for focusing. Recent
-	-- DB entries are then merged in, enriching matched open entries (e.g. with
-	-- a timestamp) and contributing unmatched entries to remaining_recent.
-	local matched_open = {}
-	local remaining_recent = {}
-	local open_by_key = {}
-	local seen_open_keys = {}
-	local seen_recent_keys = {}
+--- List all Zed workspaces (open and recent) with optional terminal information.
+--- @param config table { term?: boolean }
+--- @return table[] -- Array of ZedWorkspace tables, ordered open-first then recent.
+function zed.list_all_zed_workspaces(config)
+	local open_ws = zed.list_open_zed()
+	local recent_ws = zed.list_recent_zed_projects()
+	local matched, remaining = categorize_workspaces(open_ws, recent_ws)
 
-	-- Build the open entries first, keyed by normalized basename so recent
-	-- entries can be matched against them on the same footing.
-	for _, open_ws in ipairs(open_workspaces or {}) do
-		local key = utils.normalize_match_key(open_ws.path) or open_ws.name or open_ws.display_name
-		local ws = {
-			path         = open_ws.path,
-			name         = open_ws.name or open_ws.display_name,
-			display_name = open_ws.display_name,
-			active_file  = open_ws.active_file,
-			is_open      = true,
-			timestamp    = open_ws.timestamp,
-			window_id    = open_ws.window_id,
-			match_key    = key,
-		}
-
-		if key and not seen_open_keys[key] then
-			seen_open_keys[key] = true
-			open_by_key[key] = ws
-			table.insert(matched_open, ws)
-		elseif not key then
-			-- No usable key; still include so the open window is not lost.
-			table.insert(matched_open, ws)
-		end
-	end
-
-	-- Merge recent entries. If a recent entry matches an open entry by key,
-	-- enrich the open entry (notably its timestamp) rather than duplicating.
-	for _, recent in ipairs(recent_entries or {}) do
-		local key = recent.match_key or utils.normalize_match_key(recent.path)
-		local open_match = key and open_by_key[key] or nil
-
-		if open_match then
-			-- Carry over a timestamp so open entries can sort by recency.
-			if not open_match.timestamp and recent.timestamp then
-				open_match.timestamp = recent.timestamp
+	if config and config.term then
+		local term_list = term.list_zed_terms()
+		if term_list and #term_list > 0 then
+			local term_by_path = {}
+			for _, t in ipairs(term_list) do
+				if t.path and t.path ~= "" then
+					term_by_path[t.path:gsub("/+$", "")] = t
+				end
 			end
-			-- Prefer a real disk path from the DB over a title-derived one.
-			if recent.path and recent.path ~= "" then
-				open_match.path = recent.path
+			for _, ws in ipairs(matched) do
+				if ws.path then
+					local normalized = ws.path:gsub("/+$", "")
+					local ti = term_by_path[normalized]
+					if ti then
+						ws.term = ti
+					end
+				end
 			end
-			if not open_match.active_file and recent.active_file then
-				open_match.active_file = recent.active_file
-			end
-		else
-			if key and not seen_recent_keys[key] then
-				seen_recent_keys[key] = true
-				local ws = {
-					path         = recent.path,
-					name         = recent.name or recent.display_name,
-					display_name = recent.display_name,
-					active_file  = recent.active_file,
-					is_open      = false,
-					timestamp    = recent.timestamp,
-					window_id    = nil,
-					match_key    = key,
-				}
-				table.insert(remaining_recent, ws)
+			for _, ws in ipairs(remaining) do
+				if ws.path then
+					local normalized = ws.path:gsub("/+$", "")
+					local ti = term_by_path[normalized]
+					if ti then
+						ws.term = ti
+					end
+				end
 			end
 		end
 	end
 
-	-- Sort both lists by timestamp descending.
-	local function ts_desc(a, b)
-		local ta = a.timestamp or 0
-		local tb = b.timestamp or 0
-		return ta > tb
+	local result = {}
+	for _, ws in ipairs(matched) do
+		table.insert(result, ws)
 	end
-	table.sort(matched_open, ts_desc)
-	table.sort(remaining_recent, ts_desc)
-
-	return matched_open, remaining_recent
+	for _, ws in ipairs(remaining) do
+		table.insert(result, ws)
+	end
+	return result
 end
 
--- Get the currently focused Zed workspace with optional terminal information.
--- Returns a ZedWorkspace-like table with an additional `window` field (the hs.window)
--- and an optional `term` field { win = hs.window } if a matching terminal is found.
--- Returns nil if the focused window is not a Zed window.
-function zed.get_current_zed()
-	local win = hs.window.focusedWindow()
+--- Get a ZedWorkspace for a given window, or nil if the window is not a
+--- Zed window or an associated terminal.
+--- @param config table { term?: boolean }
+--- @param win any (hs.window)  The window to inspect.
+--- @return table|nil  The workspace table, or nil.
+function zed.get_zed_workspace_for_win(config, win)
 	if not win then return nil end
 
 	if zed.is_zed_win(win) then
 		local title = win:title() or ""
-
-		-- Parse typical "Project — file" format, same logic as list_open_zed and get_main_zed_workspace.
 		local project, file = _parse_zed_title(title)
-
 		local name = _basename(project)
 		local basename = name
-
-		-- Try to find a matching terminal
-		local term_win = term.find_terminal_by_basename(basename)
-
+		local term_info = nil
+		if config and config.term then
+			local term_win = term.find_terminal_by_basename(basename)
+			if term_win then
+				term_info = { win = term_win }
+			end
+		end
 		local ws = {
 			path         = project,
 			name         = name,
@@ -316,27 +365,20 @@ function zed.get_current_zed()
 			window_id    = win:id(),
 			window       = win,
 			basename     = basename,
-			term         = term_win and { win = term_win } or nil,
+			term         = term_info,
 		}
 		return ws
 	elseif win:application() and win:application():name() == "Alacritty" then
-		-- When the focused window is a zed-associated terminal, locate the matching Zed window
-		-- so that commands like term_position can still use the Zed frame geometry.
+		if not config or not config.term then return nil end
 		local title = win:title() or ""
 		local path = title:match("zed term %- (.+)")
-		if not path then
-			return nil
-		end
+		if not path then return nil end
 		local term_basename = path:gsub("/+$", ""):match("[^/]+$")
-		if not term_basename then
-			return nil
-		end
-
+		if not term_basename then return nil end
 		local zed_app = hs.application.get("Zed")
 		if not zed_app then return nil end
 		local zwin, zproject, zfile = _find_zed_window_by_basename(zed_app, term_basename)
 		if not zwin then return nil end
-
 		local name = _basename(zproject) or zproject
 		local ws = {
 			path         = zproject,
@@ -352,8 +394,15 @@ function zed.get_current_zed()
 		}
 		return ws
 	end
-
 	return nil
+end
+
+-- Get the currently focused Zed workspace with optional terminal information.
+-- Returns a ZedWorkspace-like table with an additional `window` field (the hs.window)
+-- and an optional `term` field { win = hs.window } if a matching terminal is found.
+-- Returns nil if the focused window is not a Zed window.
+function zed.get_current_zed(config)
+	return zed.get_zed_workspace_for_win(config, hs.window.focusedWindow())
 end
 
 -- Resolve the full workspace path for a given project basename by looking in

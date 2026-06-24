@@ -32,38 +32,10 @@ local function build_choices(...)
 	return choices
 end
 
-local function apply_term(...)
-	local term_list = term.list_zed_terms()
-	local term_by_path = {}
-	for _, t in ipairs(term_list) do
-		if t.path and t.path ~= "" then
-			term_by_path[t.path:gsub("/+$", "")] = t
-		end
-	end
-	for _, workspaces in ipairs({ ... }) do
-		for _, ws in ipairs(workspaces) do
-			if ws.path then
-				local normalized = ws.path:gsub("/+$", "")
-				local term_info = term_by_path[normalized]
-				if term_info then
-					ws.term = term_info
-				end
-			end
-		end
-	end
-end
-
 
 local function refresh_chooser(chooser_inst, config)
-	local new_open_ws = zed.list_open_zed()
-	local new_recent_ws = zed.list_recent_zed_projects()
-	local new_matched, new_remaining = zed.categorize_workspaces(new_open_ws, new_recent_ws)
-
-	if config.term then
-		apply_term(new_matched, new_remaining)
-	end
-
-	local new_choices = build_choices(new_matched, new_remaining)
+	local new_all_ws = zed.list_all_zed_workspaces(config)
+	local new_choices = build_choices(new_all_ws)
 	chooser_inst:choices(new_choices)
 	-- Reset the query to show all refreshed choices
 	chooser_inst:query("")
@@ -126,39 +98,20 @@ local function show_zed_picker(config)
 	end
 
 	-- === Get the zed info
-	local open_ws = zed.list_open_zed()
-	local recent_ws = zed.list_recent_zed_projects()
-	local matched, remaining = zed.categorize_workspaces(open_ws, recent_ws)
+	local all_ws = zed.list_all_zed_workspaces(config)
 	local current_win = hs.window.focusedWindow()
 
 	-- === Debug
 	if DEBUG then
 		print("--- DEBUG START Zed Workspace Picker Debug ---")
-		print("Open workspaces (raw):")
-		for i, ws in ipairs(open_ws) do
-			print("- " .. ws.path)
-		end
-		print("Recent DB entries (raw):")
-		for i, ws in ipairs(recent_ws) do
-			print("- " .. ws.path)
-		end
-		print("Matched open workspaces:")
-		for i, ws in ipairs(matched) do
-			print("- " .. ws.path)
-		end
-		print("Remaining recent workspaces:")
-		for i, ws in ipairs(remaining) do
-			print("- " .. ws.path)
+		for i, ws in ipairs(all_ws) do
+			print(string.format("%d: %s (open=%s, term=%s)", i, ws.path or ws.name or ws.display_name, tostring(ws.is_open), tostring(ws.term ~= nil)))
 		end
 		print("--- DEBUG END   Zed Workspace Picker Debug ---")
 	end
 
-	if config.term then
-		apply_term(matched, remaining)
-	end
-
 	-- == Build the choices
-	local choices = build_choices(matched, remaining)
+	local choices = build_choices(all_ws)
 
 	-- === Helper to refresh the chooser content after a window close.
 
