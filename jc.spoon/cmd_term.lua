@@ -122,7 +122,7 @@ function obj.term_position(params)
 		new_h = dims.height
 	end
 
-	local duration = is_new and 0.1 or 0.2
+	local duration = is_new and 0.066 or 0.2
 	if mode == "below" then
 		local new_x = zed_frame.x + (zed_frame.w / 2) - (new_w / 2)
 		local new_y = zed_frame.y + zed_frame.h + 4
