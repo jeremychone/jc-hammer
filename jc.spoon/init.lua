@@ -13,6 +13,59 @@ obj.version = "0.1"
 
 -- --- /Spoon Definition
 
+-- Keep focus coordination in one stateful callback so the short Zed activation
+-- can select the correct project without leaking handoff state onto the Spoon.
+-- The window-specific guard consumes the expected terminal restoration event,
+-- while the main-window check avoids a redundant focus round trip and flicker.
+local function create_zed_focus_handler(config, zed)
+	local term_focus_handoff = nil
+
+	return function(win, app_name)
+		if app_name == "Zed" then
+			if not term_focus_handoff then
+				local ws = zed.get_zed_workspace_for_win(config, win)
+				if ws and ws.term and ws.term.win then
+					ws.term.win:raise()
+				end
+			end
+		elseif app_name == "Alacritty" then
+			local term_window_id = win:id()
+			if term_focus_handoff and term_focus_handoff.window_id == term_window_id then
+				term_focus_handoff = nil
+				return
+			end
+
+			local ws = zed.get_zed_workspace_for_win(config, win)
+			if ws and ws.win then
+				local zed_app = ws.win:application()
+				local zed_main_win = zed_app and zed_app:mainWindow()
+				if zed_main_win and zed_main_win:id() == ws.win:id() then
+					return
+				end
+
+				local handoff = { window_id = term_window_id }
+				term_focus_handoff = handoff
+				ws.win:focus()
+
+				hs.timer.doAfter(0.05, function()
+					if term_focus_handoff == handoff then
+						local term_win = hs.window.get(term_window_id)
+						if term_win then
+							term_win:focus()
+						end
+					end
+				end)
+
+				hs.timer.doAfter(1, function()
+					if term_focus_handoff == handoff then
+						term_focus_handoff = nil
+					end
+				end)
+			end
+		end
+	end
+end
+
 function obj:init()
 	local spoon_path = hs.spoons.resourcePath("")
 
@@ -53,52 +106,7 @@ function obj:init()
 
 		-- Keep the filter on self so it is not garbage-collected.
 		self.zedFilter = hs.window.filter.new()
-		local term_focus_handoff = nil
-
-		self.zedFilter:subscribe(hs.window.filter.windowFocused, function(win, app_name)
-			if app_name == "Zed" then
-				if not term_focus_handoff then
-					local ws = zed.get_zed_workspace_for_win(config, win)
-					if ws and ws.term and ws.term.win then
-						ws.term.win:raise()
-					end
-				end
-			elseif app_name == "Alacritty" then
-				local term_window_id = win:id()
-				if term_focus_handoff and term_focus_handoff.window_id == term_window_id then
-					term_focus_handoff = nil
-					return
-				end
-
-				local ws = zed.get_zed_workspace_for_win(config, win)
-				if ws and ws.win then
-					local zed_app = ws.win:application()
-					local zed_main_win = zed_app and zed_app:mainWindow()
-					if zed_main_win and zed_main_win:id() == ws.win:id() then
-						return
-					end
-
-					local handoff = { window_id = term_window_id }
-					term_focus_handoff = handoff
-					ws.win:focus()
-
-					hs.timer.doAfter(0.05, function()
-						if term_focus_handoff == handoff then
-							local term_win = hs.window.get(term_window_id)
-							if term_win then
-								term_win:focus()
-							end
-						end
-					end)
-
-					hs.timer.doAfter(1, function()
-						if term_focus_handoff == handoff then
-							term_focus_handoff = nil
-						end
-					end)
-				end
-			end
-		end)
+		self.zedFilter:subscribe(hs.window.filter.windowFocused, create_zed_focus_handler(config, zed))
 	end
 end
 
