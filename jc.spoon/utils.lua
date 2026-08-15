@@ -23,6 +23,24 @@ local function parse_timestamp(ts)
 	})
 end
 
+-- Execute a shell command with a configured PATH environment.
+local function util_cmd_exec(cmd, args)
+	local full_cmd = cmd
+	if type(args) == "table" then
+		local parts = {}
+		for _, arg in ipairs(args) do
+			table.insert(parts, string.format("%q", tostring(arg)))
+		end
+		if #parts > 0 then
+			full_cmd = full_cmd .. " " .. table.concat(parts, " ")
+		end
+	elseif type(args) == "string" and args ~= "" then
+		full_cmd = full_cmd .. " " .. args
+	end
+	local env_prefix = "export PATH=\"$HOME/.cargo/bin:/opt/homebrew/bin:/usr/local/bin:$PATH\"; "
+	return hs.execute(env_prefix .. full_cmd)
+end
+
 -- Normalize a workspace path into a stable match key. Strips a trailing
 -- slash and returns the directory basename so open and recent entries can be
 -- compared on the same footing.
@@ -48,4 +66,6 @@ return {
 	parse_timestamp = parse_timestamp,
 	normalize_match_key = normalize_match_key,
 	load_config = load_config,
+	util_cmd_exec = util_cmd_exec,
+	cmd_exec = util_cmd_exec,
 }

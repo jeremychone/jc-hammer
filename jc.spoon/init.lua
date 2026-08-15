@@ -105,6 +105,10 @@ function obj:init()
 		cmd_zed_picker.show_zed_picker(config)
 	end)
 
+	self.hotkeys.zed_toggle_profile = hs.hotkey.bind(meh, "p", function()
+		utils.util_cmd_exec("jc-zed-tasks", "toggle-profile")
+	end)
+
 	-- Terminal positioning hotkeys and Zed focus watcher.
 	if config.term then
 		local cmd_term = dofile(spoon_path .. "/cmd_term.lua")
