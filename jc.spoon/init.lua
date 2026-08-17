@@ -109,6 +109,11 @@ function obj:init()
 		utils.util_cmd_exec("jc-zed-tasks", "toggle-profile")
 	end)
 
+	self.hotkeys.sfusion_clip_swap = hs.hotkey.bind(meh, "f", function()
+		utils.util_cmd_exec("sfusion", "clip-swap")
+		hs.eventtap.keyStroke({ "cmd" }, "v")
+	end)
+
 	-- Terminal positioning hotkeys and Zed focus watcher.
 	if config.term then
 		local cmd_term = dofile(spoon_path .. "/cmd_term.lua")
