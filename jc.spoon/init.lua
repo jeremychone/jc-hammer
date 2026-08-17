@@ -110,7 +110,7 @@ function obj:init()
 	end)
 
 	self.hotkeys.sfusion_clip_swap = hs.hotkey.bind(meh, "f", function()
-		utils.util_cmd_exec("sfusion", "clip-swap")
+		utils.util_cmd_exec("sfusion", {"clip-swap", "--sxf"})
 		hs.eventtap.keyStroke({ "cmd" }, "v")
 	end)
 
